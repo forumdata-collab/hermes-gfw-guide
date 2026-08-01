@@ -1,0 +1,372 @@
+html
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Scientific Internet practice: Oracle VM + Cloudflare dual-channel solution - VLESS/REALITY main + CF Worker backup · All free · All pitfalls tested by yourself" name="description"/>
+<title>Scientific Internet Practice: Oracle VM + Cloudflare Dual Channel · Nous Research</title>
+<style>
+:root{--bg1:#0f0c29;--bg2:#302b63;--bg3:#24243e;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.08);--text:#e8e8e8;--dim:rgba(255,255,255,0.45);--accent:#6c8cff;--green:#4ade80;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--cyan:#22d3ee;--teal-dim:rgba(45,212,191,0.12);--cyan-dim:rgba(34,211,238,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));color:var(--text);min-height:100vh;line-height:1.7}
+.container{max-width:900px;margin:0 auto;padding:32px 24px 80px}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:14px;margin-bottom:16px;transition:color .2s}.back-link:hover{color:var(--text)}
+.hero{text-align:center;padding:40px 0 24px}
+.hero-badge{display:inline-block;background:var(--teal-dim);color:var(--teal);border:1px solid rgba(45,212,191,0.2);padding:4px 14px;border-radius:20px;font-size:12px;margin-bottom:16px;letter-spacing:1px}
+.hero h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#2dd4bf,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px;line-height:1.3}
+.hero p{font-size:15px;color:var(--dim);max-width:620px;margin:0 auto}
+.hero .disclaimer{margin-top:14px;font-size:12px;color:var(--orange);border:1px solid rgba(251,191,36,0.15);background:rgba(251,191,36,0.05);border-radius:10px;padding:10px 16px;display:inline-block}
+.section{margin-bottom:40px}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.section-title .num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--teal-dim);color:var(--teal);font-size:14px;font-weight:700;flex-shrink:0}
+.section-title .r-icon{background:rgba(248,113,113,0.1);color:var(--red)}
+.section-desc{font-size:14px;color:var(--dim);margin-bottom:14px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;margin-left:6px;vertical-align:middle}
+.badge.ok{background:rgba(74,222,128,0.1);color:var(--green);border:1px solid rgba(74,222,128,0.15)}
+.badge.need{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.15)}
+.badge.teal{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(45,212,191,0.15)}
+.badge.warn{background:rgba(251,191,36,0.1);color:var(--orange);border:1px solid rgba(251,191,36,0.15)}
+.step-list{counter-reset:step;display:flex;flex-direction:column;gap:10px}
+.step-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;position:relative;padding-left:60px}
+.step-item::before{counter-increment:step;content:counter(step);position:absolute;left:18px;top:20px;width:26px;height:26px;border-radius:8px;background:var(--teal-dim);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.step-item h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.step-item p{font-size:13px;color:var(--dim);line-height:1.6}
+.step-item code{background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;font-size:12px;color:#2dd4bf}
+.step-item .cmd{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 16px;margin-top:6px;font-family:'Consolas','Courier New',monospace;font-size:13px;color:#b8c7ff;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.step-item a{color:var(--accent)}.step-item strong{color:var(--text)}
+.step-item ul{margin:4px 0;padding-left:18px;font-size:13px;color:var(--dim)}.step-item li{margin-bottom:2px}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.feature-card .f-icon{font-size:22px;margin-bottom:8px}
+.feature-card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.feature-card p{font-size:13px;color:var(--dim);line-height:1.6}
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-x:auto;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.04)}
+th{color:var(--dim);font-weight:600;background:rgba(255,255,255,0.02)}
+td{color:var(--text)} tr:last-child td{border-bottom:none}
+td a{color:var(--accent);text-decoration:none} td a:hover{text-decoration:underline}
+.link-block{background:var(--teal-dim);border:1px solid rgba(45,212,191,0.1);border-radius:14px;padding:20px 24px;margin-bottom:12px}
+.link-block h3{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--teal)}
+.link-block .link-row{display:flex;align-items:center;padding:6px 0;font-size:13px;gap:8px}
+.link-block .link-row .label{color:var(--dim);min-width:80px;flex-shrink:0}
+.link-block .link-row a{color:var(--accent);text-decoration:none}.link-block .link-row a:hover{text-decoration:underline}
+.tip{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.12);border-radius:12px;padding:14px 18px;font-size:13px;color:var(--orange);margin-top:10px}
+.tip.info{background:rgba(108,140,255,0.07);border-color:rgba(108,140,255,0.12);color:var(--accent)}
+.tip.green{background:rgba(74,222,128,0.07);border-color:rgba(74,222,128,0.12);color:var(--green)}
+.tip.red{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.12);color:var(--red)}
+.toc{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:32px}
+.toc a{font-size:12px;color:var(--dim);text-decoration:none;padding:4px 12px;border-radius:8px;border:1px solid var(--border);transition:all .2s}
+.toc a:hover{color:var(--text);border-color:rgba(255,255,255,0.15)}
+.arch-flow{display:flex;align-items:center;gap:10px;font-family:'SF Mono','Consolas',monospace;font-size:12px;color:var(--dim);flex-wrap:wrap;justify-content:center;margin-bottom:20px}
+.arch-flow span{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;white-space:nowrap}
+.arch-flow .arrow{background:none;border:none;color:var(--teal);padding:0 2px;font-size:14px}
+.footer{text-align:center;padding:32px 0 0;font-size:12px;color:rgba(255,255,255,0.2);border-top:1px solid rgba(255,255,255,0.04);margin-top:32px}
+.footer a{color:rgba(255,255,255,0.3);text-decoration:none}.footer a:hover{color:rgba(255,255,255,0.5)}
+@media(max-width:640px){.container{padding:20px 16px 60px}.hero h1{font-size:26px}.step-item{padding:16px 16px 16px 48px}.step-item::before{left:14px;top:16px;width:22px;height:22px;font-size:12px}.arch-flow{gap:6px}.arch-flow span{padding:4px 8px;font-size:11px}}
+</style>
+</head>
+<body>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px"><select onchange="location.href=this.value" style="background:var(--card,#171e2e);color:var(--text,#e8e8e8);border:1px solid var(--border,rgba(255,255,255,.08));border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit"><option value="https://forumdata-collab.github.io/hermes-gfw-guide/en/" selected>English (US)</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/zh-CN/">简体中文</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/zh-TW/">繁體中文（台灣）</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/">繁體中文（香港）</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/ar/">العربية</option></select><a href="https://ko-fi.com/forumdata" target="_blank" style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:#ff5e5b;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.47.06 8.529-1.723 8.649-4.916zm-11.638 8.978c-2.252 0-4.078-1.826-4.078-4.078s1.826-4.078 4.078-4.078 4.078 1.826 4.078 4.078-4.078 4.078z"/></svg>☕ 請我喝杯咖啡</a></div>
+<div class="container">
+<a class="back-link" href="https://forumdata-collab.github.io/">← Return to homepage</a>
+<div class="hero">
+<div class="hero-badge">Nous Research · MIT Open Source · 2026</div>
+<h1>Scientific Internet Practice: Oracle VM + Cloudflare Dual Channel</h1>
+<p>VLESS/REALITY main (VM direct connection) + CF Worker backup (edgetunnel)<br/>All free, zero risk of blockage, all pitfalls have been eliminated for you</p>
+<div class="disclaimer">⚠️<strong>Legal Statement:</strong>This tutorial is for personal study and research on network technology only. Builders must abide by local laws and regulations and shall not use it for any illegal purposes. All responsibilities are borne by the builder.</div>
+</div>
+<div class="toc">
+<a href="#arch">0 architecture</a>
+<a href="#prep">1 preparation</a>
+<a href="#vm">2VM sing-box</a>
+<a href="#edge">3CF edgetunnel</a>
+<a href="#client">4 Mobile phone configuration</a>
+<a href="#verify">5 Verification over the wall</a>
+<a href="#commands">6 Command Quick Check</a>
+<a href="#faq">7 Trampling Collection</a>
+<a href="#secure">8 safety</a>
+</div>
+0 architecture
+<div class="section" id="arch">
+<h2 class="section-title"><span class="num">0</span>Dual channel architecture</h2>
+<p class="section-desc">It's not easy to put all your eggs in the same basket. This solution uses two independent channels to back up each other: the VLESS/REALITY of the VM is the main channel, and the edgetunnel of the CF Worker is the backup - if one fails, the other one will immediately take over.</p>
+<div class="arch-flow">
+<span>📱 mobile phone</span><span class="arrow">→</span>
+<span>Automatic switching</span><span class="arrow">→</span>
+<span style="border-color:var(--green)">🟢 VM REALITY (main force)</span><span class="arrow">→</span>
+<span>🌐Internet</span>
+</div>
+<div class="arch-flow">
+<span>📱 mobile phone</span><span class="arrow">→</span>
+<span>Automatic switching</span><span class="arrow">→</span>
+<span style="border-color:var(--orange)">🟠 CF edgetunnel (backup)</span><span class="arrow">→</span>
+<span>🌐Internet</span>
+</div>
+<div class="table-wrap">
+<table>
+<tr><th></th><th>VM REALITY (main force)</th><th>CF edgetunnel (fallback)</th></tr>
+<tr><td style="font-weight:600">agreement</td><td>VLESS + REALITY (TLS disguises real website)</td><td>VLESS + WebSocket + TLS (CF CDN tunnel)</td></tr>
+<tr><td style="font-weight:600">server</td><td>Oracle ARM VM (Osaka)</td><td>Cloudflare Worker (edge node global)</td></tr>
+<tr><td style="font-weight:600">cost</td><td>OCI Always Free</td><td>Free forever (CF Workers Free Tier)</td></tr>
+<tr><td style="font-weight:600">Wall-passing ability</td><td>⭐⭐⭐⭐⭐ The most stable (disguised as iTunes, no SNI tag)</td><td>⭐⭐⭐⭐ Strong (custom domain, look at the ordinary CF website)</td></tr>
+<tr><td style="font-weight:600">speed</td><td>Stable but slightly higher latency</td><td>Ping is low (CF Anycast), but WS has overhead</td></tr>
+<tr><td style="font-weight:600">risk</td><td>VM IP may be blocked (Oracle segment)</td><td>The probability of interference in the entire CF section is low, but the free tier has a limit.</td></tr>
+</table>
+</div>
+<div class="tip info"><strong>Core philosophy:</strong>The two channels use completely different infrastructure (Oracle vs Cloudflare), so nothing will happen at the same time. The VM IP is blocked → the phone automatically jumps to CF backup → continue to surf the Internet. This is the meaning of "dual channel".</div>
+</div>
+1 preparation
+<div class="section" id="prep">
+<h2 class="section-title"><span class="num">1</span>Preparation</h2>
+<div class="table-wrap">
+<table>
+<tr><th>need</th><th>Click</th><th>Status</th></tr>
+<tr><td>Oracle Cloud account</td><td><a href="https://forumdata-collab.github.io/hermes-oracle-guide/">Oracle VM Deployment Guide §1</a></td><td><span class="badge teal">see guide</span></td></tr>
+<tr><td>Oracle ARM VM (4 vCPU/24GB)</td><td>OCI Console creation</td><td><span class="badge teal">See Guide §2</span></td></tr>
+<tr><td>Cloudflare account + domain</td><td><a href="https://forumdata-collab.github.io/hermes-cf-guide/">CF Supplementary Guide §0</a></td><td><span class="badge teal">see guide</span></td></tr>
+<tr><td>CF API Token (for Workers deployment)</td><td>Dashboard → API Tokens → Edit Cloudflare Workers</td><td><span class="badge warn">§3 Can use it</span></td></tr>
+<tr><td>sing-box</td><td>Comes within the VM (Oracle VM Deployment Guide §4)</td><td><span class="badge ok">VM built-in</span></td></tr>
+<tr><td>Mobile sing-box App</td><td>Search sing-box in App Store / Google Play</td><td><span class="badge ok">free</span></td></tr>
+</table>
+</div>
+<div class="tip red" style="margin-top:12px">⚠️<strong>Sensitive account reminder:</strong>Oracle account is tied to a credit card (free but required for verification); CF account manages domain name DNS. Neither of them should share passwords with the same person, and the API Token should never be submitted to GitHub.</div>
+</div>
+2VM sing-box
+<div class="section" id="vm">
+<h2 class="section-title"><span class="num">2</span>VM deployment sing-box (VLESS/REALITY main force)</h2>
+<p class="section-desc">This part installs sing-box on Oracle VM and creates VLESS + REALITY inbound - the world's most advanced anti-detection protocol, disguised as a normal HTTPS website (iTunes.apple.com), which GFW cannot distinguish.</p>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>Install sing-box</h3>
+<div class="cmd">curl -fsSL https://get.sing-box.dev | bash</div>
+<p>Or use package management: Ubuntu 22.04+<code>snap install sing-box</code>.</p>
+</div>
+<div class="step-item">
+<h3>Generate credentials<span class="badge need">The only thing to remember</span></h3>
+<div class="cmd">sing-box generate uuid
+sing-box generate reality-keypair
+sing-box generate rand 4 --hex</div>
+<p>Output three key values, all of which must be recorded:</p>
+<ul>
+<li><strong>UUID</strong>:User identity (e.g.<code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>)</li>
+<li><strong>PrivateKey</strong>: Server private key (used to pair with public key, for example<code>xxxxxxxxxxxxxxxxxxxxxxx</code>)</li>
+<li><strong>PublicKey</strong>: Public key (for mobile app, for example<code>xxxxxxxxxxxxxxxxxxxxxxx</code>)</li>
+<li><strong>ShortID</strong>:short code (e.g.<code>ab12</code>, 4-8 hex characters)</li>
+</ul>
+</div>
+<div class="step-item">
+<h3>Write sing-box server config</h3>
+<div class="cmd">sudo nano /etc/sing-box/config.json</div>
+<div class="cmd">{
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-reality",
+      "listen": "0.0.0.0",
+      "listen_port": 443,
+      "users": [
+        {
+          "uuid": "&lt;yourUUID&gt;",
+          "flow": "xtls-rprx-vision"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "itunes.apple.com",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "itunes.apple.com",
+            "server_port": 443
+          },
+          "private_key": "&lt;yourPrivateKey&gt;",
+          "short_id": ["&lt;yourShortID&gt;"]
+        }
+      }
+    }
+  ],
+  "route": {
+    "rules": [{ "outbound": "any", "action": "hijack-dns" }],
+    "final": "direct",
+    "auto_detect_interface": true
+  }
+}</div>
+<p>Change four placeholders:<code>&lt;你的UUID&gt;</code>,<code>&lt;你的PrivateKey&gt;</code>,<code>&lt;你的ShortID&gt;</code>. Others copy.</p>
+</div>
+<div class="step-item">
+<h3>Verify + Start</h3>
+<div class="cmd">sudo sing-box check -c /etc/sing-box/config.json
+sudo systemctl enable sing-box
+sudo systemctl start sing-box
+sudo systemctl status sing-box</div>
+<p>show<code>active (running)</code>That is success.</p>
+</div>
+</div>
+<div class="tip red" style="margin-top:12px">
+<strong>⚠️ Actual test pitfalls:</strong><br/>•<strong>Oracle NSG ≠ iptables</strong>: Just because UFW is turned on in the VM does not mean that it is passable. The Security List of the OCI Console must be turned on (two-layer firewall).<br/>•<strong>Port 443 may be occupied</strong>: Before installing sing-box<code>ss -tlnp | grep 443</code>, then move them first to let other services occupy them.<br/>•<strong>Bot 409 Conflict</strong>: sing-box service collides with old polling process →<code>pkill -f sing-box</code>Start the new service first</div>
+</div>
+3CF edgetunnel
+<div class="section" id="edge">
+<h2 class="section-title"><span class="num">3</span>CF deploys edgetunnel (Worker backup channel)</h2>
+<p class="section-desc">edgetunnel is a VLESS proxy based on Cloudflare Worker that performs WebSocket tunneling. When the VM IP is blocked, the phone will automatically jump to this backup. All run in CF free tier, no server required.</p>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>Download edgetunnel Worker code</h3>
+<div class="cmd">curl -sL "https://raw.githubusercontent.com/cmliu/edgetunnel/main/_worker.js" -o _worker.js</div>
+<p>CM liu's edgetunnel 2.x — supports VLESS/Trojan + management background + subscription generation.</p>
+</div>
+<div class="step-item">
+<h3>Generate UUID (different from VM, independent of each other)</h3>
+<div class="cmd">python3 -c "import uuid; print(uuid.uuid4())"</div>
+<p>Remember, format<code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>.</p>
+</div>
+<div class="step-item">
+<h3>Deploy to Cloudflare (wrangler CLI or Dashboard)</h3>
+<p>The most stable array: Dashboard manual</p>
+<ul>
+<li>CF Console → Workers &amp; Pages → Create Worker → Naming<code>edgetunnel</code></li>
+<li>paste<code>_worker.js</code>Content → Deploy</li>
+<li>Settings → Variables → Add secret:<code>ADMIN</code>(Admin password)+<code>UUID</code>(your UUID)</li>
+<li>Settings → Bindings → Add KV namespace (name<code>KV</code>)</li>
+<li>Trigger → Add Custom Domain → Fill in<code>vpn.你的域名.com</code></li>
+</ul>
+<div class="tip red" style="margin-top:8px">
+<strong>⚠️ Key:</strong>Must be tied<strong>Custom domain</strong>(Not *.workers.dev) - *.workers.dev is mostly blocked in mainland China! The custom domain appears to be your normal website, and GFW will not block it.</div>
+</div>
+<div class="step-item">
+<h3>Verification background</h3>
+<p>Open browser<code>https://vpn.你的域名.com/admin</code>→ Enter the ADMIN password to log in to the management background.</p>
+</div>
+<div class="step-item">
+<h3>Subscription link</h3>
+<p>Subscription URL format:<br/><code>https://vpn.你的域名.com/sub?token=&lt;計算得出嘅token&gt;</code></p>
+<p>Or use vless:// link directly (see §4 Mobile Phone Configuration).</p>
+</div>
+</div>
+</div>
+4 Mobile phone configuration
+<div class="section" id="client">
+<h2 class="section-title"><span class="num">4</span>Mobile client configuration</h2>
+<p class="section-desc">Apps such as sing-box / v2rayNG / Shadowrocket all support vless:// links for direct import.</p>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>Import three vless:// links</h3>
+<div class="cmd" style="font-size:11px;word-break:break-all">① Main force: vless://<uuid>@<vm_ip>:443?encryption=none&amp;security=reality&amp;sni=itunes.apple.com&amp;fp=chrome&amp;pbk=<publickey>&amp;sid=<shortid>&amp;flow=xtls-rprx-vision&amp;type=tcp&amp;headerType=none#VM-Main-Reality
+② Backup: vless://<cf_uuid>@vpn.yourdomainname.com:443?security=tls&amp;type=ws&amp;host=vpn.yourdomainname.com&amp;fp=chrome&amp;sni=vpn.yourdomainname.com&amp;path=%2F&amp;encryption=none#CF-Backup-Edgetunnel
+③ (Optional) VM 8443 port second channel (change the port from the above format)</cf_uuid></shortid></publickey></vm_ip></uuid></div>
+<p>Replace with real value<code>&lt;UUID&gt;</code>,<code>&lt;VM_IP&gt;</code>,<code>&lt;PublicKey&gt;</code>,<code>&lt;CF_UUID&gt;</code>Wait.</p>
+</div>
+<div class="step-item">
+<h3>Set automatic switching (automatically select the fastest node)</h3>
+<ul>
+<li><strong>v2rayNG</strong>: Long press the node → Check multiple → Press the upper right corner ⟳ Speed → Select "Automatic selection"</li>
+<li><strong>sing-box GUI</strong>: Select multiple outbound → urltest automatically selects</li>
+<li><strong>Shadowrocket/Stash</strong>:Select "Auto Select" mode</li>
+</ul>
+</div>
+</div>
+<div class="tip info" style="margin-top:12px">
+<strong>Automatic switching effect:</strong>Use VM REALITY (fastest and most stable) under normal conditions; when the VM IP is blocked → automatically jump to CF edgetunnel → access the Internet without interruption. Automatically jumps back to the main force after recovery.</div>
+</div>
+5 Verification
+<div class="section" id="verify">
+<h2 class="section-title"><span class="num">5</span>Verify over the wall</h2>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>After connecting to the proxy, visit the following website to confirm that the bypass is successful.</h3>
+<div class="table-wrap">
+<table>
+<tr><th>website</th><th>expected results</th><th>Purpose</th></tr>
+<tr><td><code>https://google.com</code></td><td>Load normally</td><td>Basic over-the-wall verification</td></tr>
+<tr><td><code>https://ipinfo.io/ip</code></td><td>Show proxy IP (CF IP or VM IP)</td><td>Confirm that the traffic flows through the proxy</td></tr>
+<tr><td><code>https://news.rthk.hk</code></td><td>Load normally</td><td>Chinese news site verification</td></tr>
+<tr><td><code>https://github.com</code></td><td>Load normally</td><td>Common site verification for developers</td></tr>
+</table>
+</div>
+</div>
+<div class="step-item">
+<h3>Verify fallback switch</h3>
+<p>Temporarily disable the main server (disable the VM node in the App) → confirm that the Internet can still be accessed (backed up by CF) → restore the main server. This test confirms that the backup channel is valid.</p>
+</div>
+</div>
+<div class="tip red" style="margin-top:12px">
+<strong>⚠️ Myip.com / ip.sb is normal.</strong>: These IP checkpoints will block Cloudflare Worker IP (too many people use CF proxy to check IP), change<code>ipinfo.io/ip</code>Just have to. It does not mean there is something wrong with the agent.</div>
+</div>
+6 Command Quick Check
+<div class="section" id="commands">
+<h2 class="section-title"><span class="num">6</span>Command cheat sheet</h2>
+<div class="table-wrap">
+<table>
+<tr><th>demand</th><th>command</th></tr>
+<tr><td>Generate UUID</td><td><code>sing-box generate uuid</code></td></tr>
+<tr><td>Generate REALITY key pair</td><td><code>sing-box generate reality-keypair</code></td></tr>
+<tr><td>Verify sing-box config</td><td><code>sing-box check -c /etc/sing-box/config.json</code></td></tr>
+<tr><td>Restart sing-box</td><td><code>sudo systemctl restart sing-box</code></td></tr>
+<tr><td>View sing-box logs</td><td><code>journalctl -u sing-box -f</code></td></tr>
+<tr><td>Check whether the port is occupied</td><td><code>ss -tlnp | grep 443</code></td></tr>
+<tr><td>View VM IP</td><td><code>curl ipinfo.io/ip</code></td></tr>
+</table>
+</div>
+</div>
+7 Trampling Collection
+<div class="section" id="faq">
+<h2 class="section-title"><span class="num">7</span>A collection of pitfalls (all personally tested)</h2>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q: All web pages report ERR_QUIC_PROTOCOL_ERROR?</p>
+<p style="font-size:13px;color:var(--dim)"><strong>Reason:</strong>edgetunnel is WebSocket (TCP only) and does not support QUIC (UDP). By default, Chrome tries QUIC first and reports an error when it hits a wall.<br/>
+<strong>Solution:</strong>Mobile App settings to add routing rules<code>block QUIC</code>, or in Chrome Settings<code>chrome://flags/#enable-quic</code>→ Disabled. The REALITY channel does not have this problem.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q: Oracle VM detects NSG blocking?</p>
+<p style="font-size:13px;color:var(--dim)"><strong>Reason:</strong>Oracle has two layers of firewall - VM entry UFW + OCI Console Security List, both layers must be enabled.<br/>
+<strong>Solution:</strong>OCI Console → Networking → Security Lists → Add Ingress Rules → Open 22/443/8443.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q: sing-box 409 Conflict?</p>
+<p style="font-size:13px;color:var(--dim)"><strong>Reason:</strong>Two sing-box processes hit the same inbound port.<br/>
+<strong>Solution:</strong><code>pkill -f sing-box</code>Stop all old processes and then<code>systemctl start sing-box</code>.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q: Edgetunnel custom domain displays CF error page?</p>
+<p style="font-size:13px;color:var(--dim)"><strong>Reason:</strong>Cert is involved in provisioning or Worker routing conflicts.<br/>
+<strong>Solution:</strong>Wait 1-3 minutes for the cert to take effect automatically; if so, confirm that the Worker Route is not competing with other records.</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q: Oracle recycles instances?</p>
+<p style="font-size:13px;color:var(--dim)">Free VMs that have no activity for a long time will be recycled. sing-box runs itself 24/7 to maintain activity. Add keepalive:<br/><code>crontab -e</code>→<code>*/30 * * * * echo "alive $(date)" &gt;&gt; ~/keepalive.log</code></p>
+</div>
+</div>
+</div>
+8 safety
+<div class="section" id="secure">
+<h2 class="section-title"><span class="num r-icon">🔒</span>Safety precautions</h2>
+<div class="table-wrap">
+<table>
+<tr><th>✅ Should do</th><th>❌ Not easy to do</th></tr>
+<tr><td>UUID is randomly generated (not easy to use online templates)</td><td>Do not share UUID/private key with others</td></tr>
+<tr><td>API Token only grants minimum permissions (Workers only)</td><td>It is not easy to submit Token/Key to GitHub</td></tr>
+<tr><td>VM SSH uses key authentication (not password)</td><td>Not easy to open Root SSH login</td></tr>
+<tr><td>Update sing-box regularly (with security fixes)</td><td>Not easy to use the outdated sing-box version</td></tr>
+<tr><td>Set ADMIN password in edgetunnel background</td><td>Don’t leave ADMIN blank (anyone can manage it)</td></tr>
+</table>
+</div>
+<div class="tip red" style="margin-top:12px">
+<strong>⚠️Legal Disclaimer (emphasis added):</strong>This tutorial is for technical learning and personal research purposes only. Any builder must abide by the laws and regulations of the region where he is located and shall not use this solution for illegal purposes. The builder is responsible for all legal responsibilities.</div>
+</div>
+Related links
+<div class="link-block" style="margin-top:16px">
+<h3>Related guides</h3>
+<div class="link-row"><span class="label">Oracle deployment</span><a href="https://forumdata-collab.github.io/hermes-oracle-guide/">How to deploy Hermes Agent on Oracle VM for free</a> <span class="badge ok">VM basics</span></div>
+<div class="link-row"><span class="label">CF AI Supplement</span><a href="https://forumdata-collab.github.io/hermes-cf-guide/">Hermes Agent × Cloudflare AI Supplementary Guide</a></div>
+<div class="link-row"><span class="label">music download</span><a href="https://forumdata-collab.github.io/hermes-mp3-guide/">Hermes Agent Music Download Guide</a></div>
+<div class="link-row"><span class="label">Hermes Agent</span><a href="https://github.com/NousResearch/hermes-agent" target="_blank">github.com/NousResearch/hermes-agent</a> <span class="badge ok">MIT open source</span></div>
+</div>
+<div class="footer">
+<a href="https://github.com/forumdata-collab" target="_blank">GitHub</a>· All personally tested · All pitfalls have been stepped on for you
+    · Nous Research</div>
+</div>
+</body>
+</html>
