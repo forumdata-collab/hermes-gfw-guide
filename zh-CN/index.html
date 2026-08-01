@@ -1,0 +1,372 @@
+html
+<html lang="zh-CN" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="科学上网实战：Oracle VM + Cloudflare 双通道方案 — VLESS/REALITY 主力 + CF Worker 后备 · 全免费 · 所有踩坑亲测" name="description"/>
+<title>科学上网实战：Oracle VM + Cloudflare 双通道 · Nous Research</title>
+<style>
+:root{--bg1:#0f0c29;--bg2:#302b63;--bg3:#24243e;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.08);--text:#e8e8e8;--dim:rgba(255,255,255,0.45);--accent:#6c8cff;--green:#4ade80;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--teal:#2dd4bf;--cyan:#22d3ee;--teal-dim:rgba(45,212,191,0.12);--cyan-dim:rgba(34,211,238,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));color:var(--text);min-height:100vh;line-height:1.7}
+.container{max-width:900px;margin:0 auto;padding:32px 24px 80px}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:14px;margin-bottom:16px;transition:color .2s}.back-link:hover{color:var(--text)}
+.hero{text-align:center;padding:40px 0 24px}
+.hero-badge{display:inline-block;background:var(--teal-dim);color:var(--teal);border:1px solid rgba(45,212,191,0.2);padding:4px 14px;border-radius:20px;font-size:12px;margin-bottom:16px;letter-spacing:1px}
+.hero h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#2dd4bf,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px;line-height:1.3}
+.hero p{font-size:15px;color:var(--dim);max-width:620px;margin:0 auto}
+.hero .disclaimer{margin-top:14px;font-size:12px;color:var(--orange);border:1px solid rgba(251,191,36,0.15);background:rgba(251,191,36,0.05);border-radius:10px;padding:10px 16px;display:inline-block}
+.section{margin-bottom:40px}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.section-title .num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--teal-dim);color:var(--teal);font-size:14px;font-weight:700;flex-shrink:0}
+.section-title .r-icon{background:rgba(248,113,113,0.1);color:var(--red)}
+.section-desc{font-size:14px;color:var(--dim);margin-bottom:14px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600;margin-left:6px;vertical-align:middle}
+.badge.ok{background:rgba(74,222,128,0.1);color:var(--green);border:1px solid rgba(74,222,128,0.15)}
+.badge.need{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.15)}
+.badge.teal{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(45,212,191,0.15)}
+.badge.warn{background:rgba(251,191,36,0.1);color:var(--orange);border:1px solid rgba(251,191,36,0.15)}
+.step-list{counter-reset:step;display:flex;flex-direction:column;gap:10px}
+.step-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;position:relative;padding-left:60px}
+.step-item::before{counter-increment:step;content:counter(step);position:absolute;left:18px;top:20px;width:26px;height:26px;border-radius:8px;background:var(--teal-dim);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.step-item h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.step-item p{font-size:13px;color:var(--dim);line-height:1.6}
+.step-item code{background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;font-size:12px;color:#2dd4bf}
+.step-item .cmd{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 16px;margin-top:6px;font-family:'Consolas','Courier New',monospace;font-size:13px;color:#b8c7ff;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.step-item a{color:var(--accent)}.step-item strong{color:var(--text)}
+.step-item ul{margin:4px 0;padding-left:18px;font-size:13px;color:var(--dim)}.step-item li{margin-bottom:2px}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.feature-card .f-icon{font-size:22px;margin-bottom:8px}
+.feature-card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.feature-card p{font-size:13px;color:var(--dim);line-height:1.6}
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-x:auto;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.04)}
+th{color:var(--dim);font-weight:600;background:rgba(255,255,255,0.02)}
+td{color:var(--text)} tr:last-child td{border-bottom:none}
+td a{color:var(--accent);text-decoration:none} td a:hover{text-decoration:underline}
+.link-block{background:var(--teal-dim);border:1px solid rgba(45,212,191,0.1);border-radius:14px;padding:20px 24px;margin-bottom:12px}
+.link-block h3{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--teal)}
+.link-block .link-row{display:flex;align-items:center;padding:6px 0;font-size:13px;gap:8px}
+.link-block .link-row .label{color:var(--dim);min-width:80px;flex-shrink:0}
+.link-block .link-row a{color:var(--accent);text-decoration:none}.link-block .link-row a:hover{text-decoration:underline}
+.tip{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.12);border-radius:12px;padding:14px 18px;font-size:13px;color:var(--orange);margin-top:10px}
+.tip.info{background:rgba(108,140,255,0.07);border-color:rgba(108,140,255,0.12);color:var(--accent)}
+.tip.green{background:rgba(74,222,128,0.07);border-color:rgba(74,222,128,0.12);color:var(--green)}
+.tip.red{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.12);color:var(--red)}
+.toc{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:32px}
+.toc a{font-size:12px;color:var(--dim);text-decoration:none;padding:4px 12px;border-radius:8px;border:1px solid var(--border);transition:all .2s}
+.toc a:hover{color:var(--text);border-color:rgba(255,255,255,0.15)}
+.arch-flow{display:flex;align-items:center;gap:10px;font-family:'SF Mono','Consolas',monospace;font-size:12px;color:var(--dim);flex-wrap:wrap;justify-content:center;margin-bottom:20px}
+.arch-flow span{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;white-space:nowrap}
+.arch-flow .arrow{background:none;border:none;color:var(--teal);padding:0 2px;font-size:14px}
+.footer{text-align:center;padding:32px 0 0;font-size:12px;color:rgba(255,255,255,0.2);border-top:1px solid rgba(255,255,255,0.04);margin-top:32px}
+.footer a{color:rgba(255,255,255,0.3);text-decoration:none}.footer a:hover{color:rgba(255,255,255,0.5)}
+@media(max-width:640px){.container{padding:20px 16px 60px}.hero h1{font-size:26px}.step-item{padding:16px 16px 16px 48px}.step-item::before{left:14px;top:16px;width:22px;height:22px;font-size:12px}.arch-flow{gap:6px}.arch-flow span{padding:4px 8px;font-size:11px}}
+</style>
+</head>
+<body>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px"><select onchange="location.href=this.value" style="background:var(--card,#171e2e);color:var(--text,#e8e8e8);border:1px solid var(--border,rgba(255,255,255,.08));border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit"><option value="https://forumdata-collab.github.io/hermes-gfw-guide/en/">English (US)</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/zh-CN/" selected>简体中文</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/zh-TW/">繁體中文（台灣）</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/">繁體中文（香港）</option><option value="https://forumdata-collab.github.io/hermes-gfw-guide/ar/">العربية</option></select><a href="https://ko-fi.com/forumdata" target="_blank" style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:#ff5e5b;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.47.06 8.529-1.723 8.649-4.916zm-11.638 8.978c-2.252 0-4.078-1.826-4.078-4.078s1.826-4.078 4.078-4.078 4.078 1.826 4.078 4.078-4.078 4.078z"/></svg>☕ 請我喝杯咖啡</a></div>
+<div class="container">
+<a class="back-link" href="https://forumdata-collab.github.io/">← 返回主页</a>
+<div class="hero">
+<div class="hero-badge">Nous Research · MIT 开源 · 2026</div>
+<h1>科学上网实战：Oracle VM + Cloudflare 双通道</h1>
+<p>VLESS/REALITY 主力（VM 直连）+ CF Worker 后备（edgetunnel）<br/>全部免费，零封锁风险，所有踩坑已替你踩平</p>
+<div class="disclaimer">⚠️<strong>法律声明：</strong>本教程仅供个人学习与研究网络技术之用。搭建者须遵守所在地区法律法规，不得用于任何非法用途。所有责任由搭建者自行承担。</div>
+</div>
+<div class="toc">
+<a href="#arch">0 架构</a>
+<a href="#prep">1 准备</a>
+<a href="#vm">2 VM sing-box</a>
+<a href="#edge">3 CF edgetunnel</a>
+<a href="#client">4 手机配置</a>
+<a href="#verify">5 验证过墙</a>
+<a href="#commands">6 命令速查</a>
+<a href="#faq">7 踩坑合集</a>
+<a href="#secure">8 安全</a>
+</div>
+0 架构
+<div class="section" id="arch">
+<h2 class="section-title"><span class="num">0</span>双通道架构</h2>
+<p class="section-desc">唔好将所有鸡蛋放同一个篮。呢个方案用两条独立通道互相后备：VM 慨 VLESS/REALITY 系主力，CF Worker 慨 edgetunnel 系后备 — 一条出事另一条即刻顶上。</p>
+<div class="arch-flow">
+<span>📱 手机</span><span class="arrow">→</span>
+<span>自动切换</span><span class="arrow">→</span>
+<span style="border-color:var(--green)">🟢 VM REALITY（主力）</span><span class="arrow">→</span>
+<span>🌐 互联网</span>
+</div>
+<div class="arch-flow">
+<span>📱 手机</span><span class="arrow">→</span>
+<span>自动切换</span><span class="arrow">→</span>
+<span style="border-color:var(--orange)">🟠 CF edgetunnel（后备）</span><span class="arrow">→</span>
+<span>🌐 互联网</span>
+</div>
+<div class="table-wrap">
+<table>
+<tr><th></th><th>VM REALITY（主力）</th><th>CF edgetunnel（后备）</th></tr>
+<tr><td style="font-weight:600">协议</td><td>VLESS + REALITY（TLS 伪装真实网站）</td><td>VLESS + WebSocket + TLS（CF CDN 隧道）</td></tr>
+<tr><td style="font-weight:600">伺服器</td><td>Oracle ARM VM（大阪）</td><td>Cloudflare Worker（边缘节点全球）</td></tr>
+<tr><td style="font-weight:600">费用</td><td>永久免费（OCI Always Free）</td><td>永久免费（CF Workers Free Tier）</td></tr>
+<tr><td style="font-weight:600">过墙能力</td><td>⭐⭐⭐⭐⭐ 最稳（伪装iTunes，无SNI标记）</td><td>⭐⭐⭐⭐ 强（自订 domain，睇落系普通CF网站）</td></tr>
+<tr><td style="font-weight:600">速度</td><td>稳定但延迟略高</td><td>Ping低（CF Anycast），但WS有overhead</td></tr>
+<tr><td style="font-weight:600">风险</td><td>VM IP可能被封（Oracle段）</td><td>CF整段被干扰机率较低，但免费tier有限额</td></tr>
+</table>
+</div>
+<div class="tip info"><strong>核心理念：</strong>两条通道走完全唔同慨基建（Oracle vs Cloudflare），唔会同时出事。 VM IP 被封 → 手机自动跳 CF 后备 → 继续上网。呢个就系「双通道」慨意义。</div>
+</div>
+1 准备
+<div class="section" id="prep">
+<h2 class="section-title"><span class="num">1</span>准备工作</h2>
+<div class="table-wrap">
+<table>
+<tr><th>需要</th><th>点攞</th><th>状态</th></tr>
+<tr><td>Oracle Cloud 帐号</td><td><a href="https://forumdata-collab.github.io/hermes-oracle-guide/">Oracle VM 部署指南 §1</a></td><td><span class="badge teal">见指南</span></td></tr>
+<tr><td>Oracle ARM VM（4 vCPU / 24GB）</td><td>OCI Console 建立</td><td><span class="badge teal">见指南 §2</span></td></tr>
+<tr><td>Cloudflare 帐号 + 域名</td><td><a href="https://forumdata-collab.github.io/hermes-cf-guide/">CF 补充指南 §0</a></td><td><span class="badge teal">见指南</span></td></tr>
+<tr><td>CF API Token（Workers 部署用）</td><td>Dashboard → API Tokens → Edit Cloudflare Workers</td><td><span class="badge warn">§3 会用</span></td></tr>
+<tr><td>sing-box</td><td>VM 内自带（Oracle VM 部署指南 §4）</td><td><span class="badge ok">VM 内建</span></td></tr>
+<tr><td>手机 sing-box App</td><td>App Store / Google Play 搜 sing-box</td><td><span class="badge ok">免费</span></td></tr>
+</table>
+</div>
+<div class="tip red" style="margin-top:12px">⚠️<strong>敏感帐户提醒：</strong>Oracle 帐号绑信用卡（免费但验证用）；CF 帐号管理域名 DNS。两个都唔好同人共用密码，API Token 千万唔好提交去 GitHub。</div>
+</div>
+2 VM sing-box
+<div class="section" id="vm">
+<h2 class="section-title"><span class="num">2</span>VM 部署 sing-box（VLESS/REALITY 主力）</h2>
+<p class="section-desc">呢部分喺 Oracle VM 上面安装 sing-box，建立 VLESS + REALITY 入站 — 世界最先进慨反侦测协议，伪装成正常 HTTPS 网站（iTunes.apple.com），GFW 无法分辨。</p>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>安装 sing-box</h3>
+<div class="cmd">curl -fsSL https://get.sing-box.dev | bash</div>
+<p>或者用包管理：Ubuntu 22.04+<code>snap install sing-box</code>。</p>
+</div>
+<div class="step-item">
+<h3>生成凭证<span class="badge need">唯一需要记低慨嘢</span></h3>
+<div class="cmd">sing-box generate uuid
+sing-box generate reality-keypair
+sing-box generate rand 4 --hex</div>
+<p>输出三个关键值，全部要记低：</p>
+<ul>
+<li><strong>UUID</strong>：用户身分（例如<code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>）</li>
+<li><strong>PrivateKey</strong>：伺服器私钥（配对公钥用，例如<code>xxxxxxxxxxxxxxxxxxxxxxx</code>）</li>
+<li><strong>PublicKey</strong>：公钥（手机 App 用，例如<code>xxxxxxxxxxxxxxxxxxxxxxx</code>）</li>
+<li><strong>ShortID</strong>：短码（例如<code>ab12</code>，4-8个hex字元）</li>
+</ul>
+</div>
+<div class="step-item">
+<h3>写 sing-box server config</h3>
+<div class="cmd">sudo nano /etc/sing-box/config.json</div>
+<div class="cmd">{
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-reality",
+      "listen": "0.0.0.0",
+      "listen_port": 443,
+      "users": [
+        {
+          "uuid": "&lt;你的UUID&gt;",
+          "flow": "xtls-rprx-vision"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "itunes.apple.com",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "itunes.apple.com",
+            "server_port": 443
+          },
+          "private_key": "&lt;你的PrivateKey&gt;",
+          "short_id": ["&lt;你的ShortID&gt;"]
+        }
+      }
+    }
+  ],
+  "route": {
+    "rules": [{ "outbound": "any", "action": "hijack-dns" }],
+    "final": "direct",
+    "auto_detect_interface": true
+  }
+}</div>
+<p>改四个 placeholder：<code>&lt;你的UUID&gt;</code>、<code>&lt;你的PrivateKey&gt;</code>、<code>&lt;你的ShortID&gt;</code>。其他照抄。</p>
+</div>
+<div class="step-item">
+<h3>验证 + 启动</h3>
+<div class="cmd">sudo sing-box check -c /etc/sing-box/config.json
+sudo systemctl enable sing-box
+sudo systemctl start sing-box
+sudo systemctl status sing-box</div>
+<p>显示<code>active (running)</code>即成功。</p>
+</div>
+</div>
+<div class="tip red" style="margin-top:12px">
+<strong>⚠️ 实测踩坑：</strong><br/>•<strong>Oracle NSG ≠ iptables</strong>：VM 入面开咗 UFW 唔代表通，OCI Console 慨 Security List 都要开（两层防火墙）<br/>•<strong>443 port 可能被占用</strong>：装 sing-box 前先<code>ss -tlnp | grep 443</code>，俾其他服务占咗就移走先<br/>•<strong>Bot 409 Conflict</strong>：sing-box 服务同旧 polling 进程撞 →<code>pkill -f sing-box</code>先启动新服务</div>
+</div>
+3 CF edgetunnel
+<div class="section" id="edge">
+<h2 class="section-title"><span class="num">3</span>CF 部署 edgetunnel（Worker 后备通道）</h2>
+<p class="section-desc">edgetunnel 系基于 Cloudflare Worker 慨 VLESS 代理，行 WebSocket 隧道。 VM IP 被封时，手机会自动跳去呢条后备。全部跑喺 CF 免费 tier，唔需要伺服器。</p>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>下载 edgetunnel Worker 代码</h3>
+<div class="cmd">curl -sL "https://raw.githubusercontent.com/cmliu/edgetunnel/main/_worker.js" -o _worker.js</div>
+<p>CM liu 慨 edgetunnel 2.x — 支援 VLESS/Trojan + 管理后台 + 订阅生成。</p>
+</div>
+<div class="step-item">
+<h3>生成 UUID（同 VM 唔同，各自独立）</h3>
+<div class="cmd">python3 -c "import uuid; print(uuid.uuid4())"</div>
+<p>记低，格式<code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>。</p>
+</div>
+<div class="step-item">
+<h3>部署到 Cloudflare（wrangler CLI 或 Dashboard）</h3>
+<p>最稳阵：Dashboard 手动</p>
+<ul>
+<li>CF Console → Workers &amp; Pages → Create Worker → 命名<code>edgetunnel</code></li>
+<li>贴上<code>_worker.js</code>内容 → Deploy</li>
+<li>Settings → Variables → 加 secret：<code>ADMIN</code>（管理密码）+<code>UUID</code>（你慨 UUID）</li>
+<li>Settings → Bindings → 加 KV namespace（名称<code>KV</code>）</li>
+<li>Trigger → Add Custom Domain → 填<code>vpn.你的域名.com</code></li>
+</ul>
+<div class="tip red" style="margin-top:8px">
+<strong>⚠️ 关键：</strong>一定要绑<strong>自订 domain</strong>（唔系 *.workers.dev）— *.workers.dev 喺大陆多数被墙！自订 domain 睇落系你慨正常网站，GFW 唔会封。</div>
+</div>
+<div class="step-item">
+<h3>验证后台</h3>
+<p>浏览器开<code>https://vpn.你的域名.com/admin</code>→ 输入 ADMIN 密码登入管理后台。</p>
+</div>
+<div class="step-item">
+<h3>攞订阅连结</h3>
+<p>订阅 URL 格式：<br/><code>https://vpn.你的域名.com/sub?token=&lt;計算得出嘅token&gt;</code></p>
+<p>或者直接用 vless:// 连结（见 §4 手机配置）。</p>
+</div>
+</div>
+</div>
+4 手机配置
+<div class="section" id="client">
+<h2 class="section-title"><span class="num">4</span>手机客户端配置</h2>
+<p class="section-desc">sing-box / v2rayNG / Shadowrocket 等 App 都支援 vless:// 连结直接汇入。</p>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>汇入三条 vless:// 连结</h3>
+<div class="cmd" style="font-size:11px;word-break:break-all">① 主力：vless://<uuid>@<vm_ip>:443?encryption=none&amp;security=reality&amp;sni=itunes.apple.com&amp;fp=chrome&amp;pbk=<publickey>&amp;sid=<shortid>&amp;flow=xtls-rprx-vision&amp;type=tcp&amp;headerType=none#VM-主力-Reality
+② 后备：vless://<cf_uuid>@vpn.你的域名.com:443?security=tls&amp;type=ws&amp;host=vpn.你的域名.com&amp;fp=chrome&amp;sni=vpn.你的域名.com&amp;path=%2F&amp;encryption=none#CF-后备-Edgetunnel
+③ （可选）VM 8443 端口第二通道（跟上述格式改port）</cf_uuid></shortid></publickey></vm_ip></uuid></div>
+<p>用真实值替换<code>&lt;UUID&gt;</code>、<code>&lt;VM_IP&gt;</code>、<code>&lt;PublicKey&gt;</code>、<code>&lt;CF_UUID&gt;</code>等。</p>
+</div>
+<div class="step-item">
+<h3>设定自动切换（自动选择最快节点）</h3>
+<ul>
+<li><strong>v2rayNG</strong>：长按节点 → 勾选多个 → 顶按右上角 ⟳ 测速 → 拣「自动选择」</li>
+<li><strong>sing-box GUI</strong>：选多个 outbound → urltest 自动拣</li>
+<li><strong>Shadowrocket / Stash</strong>：选「自动选择」模式</li>
+</ul>
+</div>
+</div>
+<div class="tip info" style="margin-top:12px">
+<strong>自动切换效果：</strong>正常时用 VM REALITY（最快最稳）；VM IP 被封时 → 自动跳 CF edgetunnel → 上网无中断。恢复后自动跳返主力。</div>
+</div>
+5 验证
+<div class="section" id="verify">
+<h2 class="section-title"><span class="num">5</span>验证过墙</h2>
+<div class="step-list" style="counter-reset:step 0">
+<div class="step-item">
+<h3>连上代理后，访问以下网站确认过墙成功</h3>
+<div class="table-wrap">
+<table>
+<tr><th>网站</th><th>预期结果</th><th>用途</th></tr>
+<tr><td><code>https://google.com</code></td><td>正常载入</td><td>基本过墙验证</td></tr>
+<tr><td><code>https://ipinfo.io/ip</code></td><td>显示代理IP（CF IP 或 VM IP）</td><td>确认流量经代理出街</td></tr>
+<tr><td><code>https://news.rthk.hk</code></td><td>正常载入</td><td>中文新闻站验证</td></tr>
+<tr><td><code>https://github.com</code></td><td>正常载入</td><td>开发者常用站验证</td></tr>
+</table>
+</div>
+</div>
+<div class="step-item">
+<h3>验证后备切换</h3>
+<p>临时禁用主力（喺 App 入面停用 VM 节点）→ 确认仍可以上网（经 CF 后备）→ 恢复主力。呢个测试确认后备通道有效。</p>
+</div>
+</div>
+<div class="tip red" style="margin-top:12px">
+<strong>⚠️ myip.com / ip.sb 唔通系正常慨</strong>：呢啲 IP 检查站会封 Cloudflare Worker IP（太多人用 CF 代理 check IP），换<code>ipinfo.io/ip</code>就得。唔代表代理有问题。</div>
+</div>
+6 命令速查
+<div class="section" id="commands">
+<h2 class="section-title"><span class="num">6</span>命令速查表</h2>
+<div class="table-wrap">
+<table>
+<tr><th>需求</th><th>命令</th></tr>
+<tr><td>生成 UUID</td><td><code>sing-box generate uuid</code></td></tr>
+<tr><td>生成 REALITY 金钥对</td><td><code>sing-box generate reality-keypair</code></td></tr>
+<tr><td>验证 sing-box config</td><td><code>sing-box check -c /etc/sing-box/config.json</code></td></tr>
+<tr><td>重启 sing-box</td><td><code>sudo systemctl restart sing-box</code></td></tr>
+<tr><td>查看 sing-box 日志</td><td><code>journalctl -u sing-box -f</code></td></tr>
+<tr><td>检查 port 有冇被占</td><td><code>ss -tlnp | grep 443</code></td></tr>
+<tr><td>查看 VM IP</td><td><code>curl ipinfo.io/ip</code></td></tr>
+</table>
+</div>
+</div>
+7 踩坑合集
+<div class="section" id="faq">
+<h2 class="section-title"><span class="num">7</span>踩坑合集（全部亲测）</h2>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q：所有网页报 ERR_QUIC_PROTOCOL_ERROR？</p>
+<p style="font-size:13px;color:var(--dim)"><strong>原因：</strong>edgetunnel 系 WebSocket（TCP only），唔支援 QUIC（UDP）。 Chrome 预设优先试 QUIC，撞墙就报错。<br/>
+<strong>解决：</strong>手机 App 设定加入路由规则<code>block QUIC</code>，或者喺 Chrome 设定<code>chrome://flags/#enable-quic</code>→ Disabled。 REALITY 通道冇呢个问题。</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q：Oracle VM 侦测到 NSG 阻挡？</p>
+<p style="font-size:13px;color:var(--dim)"><strong>原因：</strong>Oracle 有两层防火墙 — VM 入面 UFW + OCI Console Security List，两层都要开。<br/>
+<strong>解决：</strong>OCI Console → Networking → Security Lists → Add Ingress Rules → 开 22/443/8443。</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q：sing-box 409 Conflict？</p>
+<p style="font-size:13px;color:var(--dim)"><strong>原因：</strong>两个 sing-box 进程撞同一个 inbound port。<br/>
+<strong>解决：</strong><code>pkill -f sing-box</code>停晒所有旧进程，再<code>systemctl start sing-box</code>。</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q：edgetunnel 自订 domain 显示 CF 错误页？</p>
+<p style="font-size:13px;color:var(--dim)"><strong>原因：</strong>Cert 仲喺 provisioning 或者 Worker 路由冲突。<br/>
+<strong>解决：</strong>等 1-3 分钟 cert 自动生效；如果仲系，确认 Worker Route 冇同其他 record 抢。</p>
+</div>
+<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+<p style="font-weight:600;margin-bottom:4px">Q：Oracle 回收实例？</p>
+<p style="font-size:13px;color:var(--dim)">免费 VM 长期冇活动会被回收。 sing-box 24/7 运行本身维持活动。加 keepalive：<br/><code>crontab -e</code>→<code>*/30 * * * * echo "alive $(date)" &gt;&gt; ~/keepalive.log</code></p>
+</div>
+</div>
+</div>
+8 安全
+<div class="section" id="secure">
+<h2 class="section-title"><span class="num r-icon">🔒</span>安全注意事项</h2>
+<div class="table-wrap">
+<table>
+<tr><th>✅ 应该做</th><th>❌ 唔好做</th></tr>
+<tr><td>UUID 随机生成（唔好用网上范本）</td><td>唔好同人共用 UUID / 私钥</td></tr>
+<tr><td>API Token 只赋予最小权限（Workers only）</td><td>唔好将 Token / Key 提交去 GitHub</td></tr>
+<tr><td>VM SSH 用金钥认证（唔用密码）</td><td>唔好开放 Root SSH 登入</td></tr>
+<tr><td>定期更新 sing-box（有安全修复）</td><td>唔好用过时慨 sing-box 版本</td></tr>
+<tr><td>edgetunnel 后台设 ADMIN 密码</td><td>唔好留空 ADMIN（任何人都可以管理）</td></tr>
+</table>
+</div>
+<div class="tip red" style="margin-top:12px">
+<strong>⚠️ 法律声明（再强调）：</strong>本教程仅供技术学习与个人研究用途。任何搭建者需遵守所在地区法律法规，不得将本方案用于非法用途。搭建者需自行承担所有法律责任。</div>
+</div>
+相关连结
+<div class="link-block" style="margin-top:16px">
+<h3>相关指南</h3>
+<div class="link-row"><span class="label">Oracle 部署</span><a href="https://forumdata-collab.github.io/hermes-oracle-guide/">如何在 Oracle VM 免费部署 Hermes Agent</a> <span class="badge ok">VM 基础</span></div>
+<div class="link-row"><span class="label">CF AI 补充</span><a href="https://forumdata-collab.github.io/hermes-cf-guide/">Hermes Agent × Cloudflare AI 补充指南</a></div>
+<div class="link-row"><span class="label">音乐下载</span><a href="https://forumdata-collab.github.io/hermes-mp3-guide/">Hermes Agent 音乐下载指南</a></div>
+<div class="link-row"><span class="label">Hermes Agent</span><a href="https://github.com/NousResearch/hermes-agent" target="_blank">github.com/NousResearch/hermes-agent</a> <span class="badge ok">MIT 开源</span></div>
+</div>
+<div class="footer">
+<a href="https://github.com/forumdata-collab" target="_blank">GitHub</a>·  全部亲测 · 所有坑已替你踩过
+     ·  Nous Research</div>
+</div>
+</body>
+</html>
