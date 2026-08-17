@@ -216,13 +216,69 @@ sudo systemctl status sing-box</div>
     </div>
   </div>
 
-  <!-- 3 CF edgetunnel -->
+  <!-- 3 CF Tunnel + edgetunnel -->
   <div class="section" id="edge">
-    <h2 class="section-title"><span class="num">3</span> CF 部署 edgetunnel（Worker 後備通道）</h2>
-    <p class="section-desc">edgetunnel 係基於 Cloudflare Worker 嘅 VLESS 代理，行 WebSocket 隧道。VM IP 被封時，手機會自動跳去呢條後備。全部跑喺 CF 免費 tier，唔需要伺服器。</p>
+    <h2 class="section-title"><span class="num">3</span> CF 雙後備：Tunnel（穩定主力）+ edgetunnel（Worker 備用）</h2>
+    <p class="section-desc">除咗 VM REALITY 直連，我哋仲有兩條獨立 CF 通道互相後備：<strong>Cloudflare Tunnel</strong>（cloudflared，穩定穿 GFW）同 <strong>edgetunnel</strong>（Worker）。三條通道任一條出事，其他即刻頂上。</p>
+    <div class="tip info" style="margin-bottom:14px">
+      <strong>💡 Cloudflare Tunnel 完全免費：</strong>包含喺 CF Free plan，無限 tunnel / 無限流量 / 自動 SSL / 全球 Anycast。無需開 port、無需公網 IP。付費版只多 SSO / Access policies / Audit logs。
+    </div>
     <div class="step-list" style="counter-reset:step 0">
       <div class="step-item">
-        <h3>下載 edgetunnel Worker 代碼</h3>
+        <h3>安裝 cloudflared + 建立 Tunnel（推薦先做）</h3>
+        <div class="cmd"># 安裝
+curl -sL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb -o /tmp/cloudflared.deb
+sudo dpkg -i /tmp/cloudflared.deb
+
+# 用 CF Global API Key 建立 tunnel（替換 YOUR_KEY / YOUR_EMAIL / YOUR_ACCOUNT_ID）
+TID=$(curl -s -X POST -H "X-Auth-Email: YOUR_EMAIL" -H "X-Auth-Key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  "https://api.cloudflare.com/client/v4/accounts/YOUR_ACCOUNT_ID/cfd_tunnel" \
+  -d '{"name":"vm-ws","config_src":"local"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['result']['id'])")
+
+# 攞 token + 寫 credentials
+TOKEN=$(curl -s -H "X-Auth-Email: YOUR_EMAIL" -H "X-Auth-Key: YOUR_KEY" \
+  "https://api.cloudflare.com/client/v4/accounts/YOUR_ACCOUNT_ID/cfd_tunnel/$TID/token" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['result'])")
+mkdir -p ~/.cloudflared
+echo "$TOKEN" > ~/.cloudflared/tunnel-token.txt
+
+# 寫 config（假設 nginx 已加 /ws → sing-box :10001）
+cat > ~/.cloudflared/config.yml << EOF
+tunnel: $TID
+credentials-file: /home/ubuntu/.cloudflared/$TID.json
+no-autoupdate: true
+ingress:
+  - hostname: ws.你的域名.com
+    service: http://127.0.0.1:80
+  - service: http_status:404
+EOF
+
+# DNS record（CNAME → tunnel）
+curl -s -X POST -H "X-Auth-Email: YOUR_EMAIL" -H "X-Auth-Key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  "https://api.cloudflare.com/client/v4/zones/YOUR_ZONE_ID/dns_records" \
+  -d "{\"type\":\"CNAME\",\"name\":\"ws.你的域名.com\",\"content\":\"$TID.cfargotunnel.com\",\"proxied\":true}"
+
+# systemd service
+sudo tee /etc/systemd/system/cloudflared-vmws.service << EOF
+[Unit]
+Description=Cloudflare Tunnel (vm-ws)
+After=network-online.target
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/bin/cloudflared tunnel --config /home/ubuntu/.cloudflared/config.yml run --token $TOKEN
+Restart=on-failure
+RestartSec=5
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now cloudflared-vmws</div>
+        <p>Tunnel 建好後，<code>ws.你的域名.com/ws</code> 會經 CF 轉發到 VM nginx → sing-box VLESS-WS inbound。</p>
+      </div>
+      <div class="step-item">
+        <h3>（備用）下載 edgetunnel Worker 代碼</h3>
         <div class="cmd">curl -sL "https://raw.githubusercontent.com/cmliu/edgetunnel/main/_worker.js" -o _worker.js</div>
         <p>CM liu 嘅 edgetunnel 2.x — 支援 VLESS/Trojan + 管理後台 + 訂閱生成。</p>
       </div>
@@ -264,10 +320,10 @@ sudo systemctl status sing-box</div>
     <div class="step-list" style="counter-reset:step 0">
       <div class="step-item">
         <h3>匯入三條 vless:// 連結</h3>
-        <div class="cmd" style="font-size:11px;word-break:break-all">① 主力：vless://<UUID>@<VM_IP>:443?encryption=none&security=reality&sni=itunes.apple.com&fp=chrome&pbk=<PublicKey>&sid=<ShortID>&flow=xtls-rprx-vision&type=tcp&headerType=none#VM-主力-Reality
-② 後備：vless://<CF_UUID>@vpn.你的域名.com:443?security=tls&type=ws&host=vpn.你的域名.com&fp=chrome&sni=vpn.你的域名.com&path=%2F&encryption=none#CF-後備-Edgetunnel
-③ （可選）VM 8443 端口第二通道（跟上述格式改port）</div>
-        <p>用真實值替換 <code>&lt;UUID&gt;</code>、<code>&lt;VM_IP&gt;</code>、<code>&lt;PublicKey&gt;</code>、<code>&lt;CF_UUID&gt;</code> 等。</p>
+        <div class="cmd" style="font-size:11px;word-break:break-all">① VM-REALITY（直連，低延遲）：vless://<UUID>@<VM_IP>:443?encryption=none&security=reality&sni=itunes.apple.com&fp=chrome&pbk=<PublicKey>&sid=<ShortID>&flow=xtls-rprx-vision&type=tcp#VM-REALITY-443
+② VM-WS-CF（Tunnel，穩定主力）：vless://<UUID>@ws.你的域名.com:443?encryption=none&security=tls&sni=ws.你的域名.com&fp=chrome&type=ws&host=ws.你的域名.com&path=%2Fws#VM-WS-CF
+③ CF-Edgetunnel（Worker 備用）：vless://<CF_UUID>@vpn.你的域名.com:443?security=tls&type=ws&host=vpn.你的域名.com&fp=chrome&sni=vpn.你的域名.com&path=%2F&encryption=none#CF-Edgetunnel</div>
+        <p>⚠️ <strong>pbk 必須用 URL-safe base64</strong>（<code>/</code> → <code>_</code>，去掉尾部 <code>=</code>）。標準 base64 會導致客戶端 decode 失敗（-1ms）。用真實值替換 <code>&lt;UUID&gt;</code>、<code>&lt;VM_IP&gt;</code>、<code>&lt;PublicKey&gt;</code>、<code>&lt;CF_UUID&gt;</code> 等。</p>
       </div>
       <div class="step-item">
         <h3>設定自動切換（自動選擇最快節點）</h3>
@@ -279,7 +335,7 @@ sudo systemctl status sing-box</div>
       </div>
     </div>
     <div class="tip info" style="margin-top:12px">
-      <strong>自動切換效果：</strong>正常時用 VM REALITY（最快最穩）；VM IP 被封時 → 自動跳 CF edgetunnel → 上網無中斷。恢復後自動跳返主力。
+      <strong>自動切換效果：</strong>正常時用 VM REALITY（最快最穩）；VM IP 被封時 → 自動跳 VM-WS-CF（Tunnel）或 CF edgetunnel → 上網無中斷。恢復後自動跳返主力。三條通道互為後備，確保任何情況下都有路可出。
     </div>
   </div>
 
