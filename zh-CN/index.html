@@ -87,6 +87,7 @@ td a{color:var(--accent);text-decoration:none} td a:hover{text-decoration:underl
 <a href="#commands">6 命令速查</a>
 <a href="#faq">7 踩坑合集</a>
 <a href="#secure">8 安全</a>
+<a href="#pihole">9 Pi-hole</a>
 </div>
 0 架构
 <div class="section" id="arch">
@@ -357,6 +358,78 @@ sudo systemctl status sing-box</div>
 <strong>⚠️ 法律声明（再强调）：</strong>本教程仅供技术学习与个人研究用途。任何搭建者需遵守所在地区法律法规，不得将本方案用于非法用途。搭建者需自行承担所有法律责任。</div>
 </div>
 相关连结
+<!-- 9 Pi-hole -->
+<div class="section" id="pihole">
+  <h2 class="section-title"><span class="num">9</span>Pi-hole 私人 DNS（全机挡广告）</h2>
+  <p class="section-desc">承接前面的 VM，在同一部机行 Pi-hole + DNS-over-TLS（DoT），手机、电脑、平板全部经你的私人 DNS 出去 — 广告在 DNS 层直接挡走，无需在每部机装 blocker，也无需开启任何 VPN App 就能挡广告。</p>
+  <div class="step-list" style="counter-reset:step 0">
+    <div class="step-item">
+      <h3>VM 起 Pi-hole（Docker）</h3>
+      <p>预设 admin 密码会印在 container log（<code>WEBPASSWORD</code>），网页后台：<code>http://<VM_IP>:8080/admin</code>。 DNS 只 bind 在本机 5353，留给下一步的 DoT 前端转发。</p>
+      <div class="cmd">docker run -d --name pihole --restart unless-stopped \
+-e TZ=Asia/Hong_Kong \
+-p 127.0.0.1:5353:53/tcp -p 127.0.0.1:5353:53/udp \
+-p 8080:80/tcp pihole/pihole:latest
+docker logs pihole 2>&1 | grep -i password</div>
+    </div>
+    <div class="step-item">
+      <h3>一定要更新 blocklist（新高装系 0 条规则）</h3>
+      <p>亲测：新装 Pi-hole<strong>一个广告都不会挡</strong>，因为 gravity 系空的。要手动跑一次先载入官方默认列表；之后可以在 Web UI → Adlists 加自己钟意的 list（例如 oisd / hagezi）。</p>
+      <div class="cmd">docker exec pihole pihole -g</div>
+      <div class="tip red"><strong>⚠️ 不好漏了呢步：</strong><code>pihole -g</code>不跑，装完会以为部机「坏了」——实际只系列表未载入。之后 blocklist 更新可以经 Web UI 或 cron 定时跑。</div>
+    </div>
+    <div class="step-item">
+      <h3>拿真 SSL cert（DoT 验证要用）</h3>
+      <p>用 acme.sh + DNS-01（Cloudflare token），不使开 80 port，cert 自动续期。</p>
+      <div class="cmd">export CF_Token="<你的CF_API_Token>" CF_Zone_ID="<你的Zone_ID>"
+~/.acme.sh/acme.sh --issue --dns dns_cf -d dns.你的域名.com \
+--server letsencrypt --keylength ec-256
+~/.acme.sh/acme.sh --install-cert -d dns.你的域名.com --ecc \
+--key-file /etc/dnsproxy/key.pem --fullchain-file /etc/dnsproxy/fullchain.pem \
+--reloadcmd "sudo systemctl restart dnsproxy"</div>
+    </div>
+    <div class="step-item">
+      <h3>dnsproxy 起 DoT（853）</h3>
+      <p>用 AdGuard 的<code>dnsproxy</code>（单一 binary），听 853，上游指向 Pi-hole。 systemd unit：</p>
+      <div class="cmd">[Unit]
+Description=DoT -> Pi-hole
+After=docker.service
+[Service]
+ExecStart=/usr/local/bin/dnsproxy --listen=0.0.0.0 --port=0 --tls-port=853 \
+--tls-crt=/etc/dnsproxy/fullchain.pem --tls-key=/etc/dnsproxy/key.pem \
+--upstream=127.0.0.1:5353 --cache --cache-size=65536
+Restart=always
+[Install]
+WantedBy=multi-user.target</div>
+      <p><code>--port=0</code>好重要：不系的话 dnsproxy 会连 plain DNS 53 一齐开，同 VM 上其他嘢争 port。</p>
+    </div>
+    <div class="step-item">
+      <h3>OCI Security List 开 853</h3>
+      <p>Oracle 有两层防火墙（同 §7 讲的一样）：OCI Console → Networking → Security Lists → Add Ingress Rule：<code>TCP 853</code>。</p>
+    </div>
+    <div class="step-item">
+      <h3>DNS record（灰云 A record）</h3>
+      <p>CF Dashboard → DNS → 加一条：<code>dns.你的域名.com</code>→ A record →<code><VM_IP></code>，<strong>一定要灰云</strong>（Proxy off）— DoT 系直接 TCP 到 VM，行不到 CF proxy。</p>
+    </div>
+    <div class="step-item">
+      <h3>手机 / 电脑设定</h3>
+      <ul>
+        <li><strong>Android（原生）：</strong>设定 → 私人 DNS → 主机名称填<code>dns.你的域名.com</code>（系统 DoT，不使装 App）</li>
+        <li><strong>iPhone / iPad：</strong>用 DNS configuration profile（.mobileconfig，DoT），Safari 开 → 设定 → 一般 → VPN 与装置管理 → 安装 + 信任。可以叫 AI 帮手生成个 profile</li>
+        <li><strong>Windows 11：</strong>设定 → 网路和网际网路 → DNS → 手动 → DoT 填<code>dns.你的域名.com</code></li>
+      </ul>
+    </div>
+  </div>
+  <div class="tip green" style="margin-top:12px"><strong>验证：</strong><code>dig +tls @dns.你的域名.com google.com</code>出到 IP 即系通；再<code>dig +tls @dns.你的域名.com doubleclick.net</code>应该出<code>0.0.0.0</code>（blocked）。</div>
+  <div class="tip red" style="margin-top:8px"><strong>⚠️ 注意事项：</strong>
+    <ul style="margin:4px 0 0 18px">
+      <li>部分网络（公司 Wi-Fi / 某些 ISP）会封 853 port → 呢个情况会静静鸡跌落未加密 DNS。需要的话加个 DoH（443）前端做后备，但 Android 私人 DNS 只食 DoT。</li>
+      <li>不好将你个 DNS 地址贴去公开地方——任何人拿到都可以借用你个 resolver（开放 DNS 滥用 + 食你 VM 流量）。</li>
+      <li>blocklist 通常不会 cover 晒所有 apex domain（例如<code>googleadservices.com</code>本身不在 list）——正常，实​​际广告流量都系行子域（<code>ad.xxx.com</code>），这些才是重点。</li>
+    </ul>
+  </div>
+</div>
+
 <div class="link-block" style="margin-top:16px">
 <h3>相关指南</h3>
 <div class="link-row"><span class="label">Oracle 部署</span><a href="https://forumdata-collab.github.io/hermes-oracle-guide/">如何在 Oracle VM 免费部署 Hermes Agent</a> <span class="badge ok">VM 基础</span></div>

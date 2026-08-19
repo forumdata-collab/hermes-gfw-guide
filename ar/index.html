@@ -87,6 +87,7 @@ td a{color:var(--accent);text-decoration:none} td a:hover{text-decoration:underl
 <a href="#commands">6 أمر فحص سريع</a>
 <a href="#faq">7 جمع الدوس</a>
 <a href="#secure">8 السلامة</a>
+<a href="#pihole">9 Pi-hole</a>
 </div>
 0 الهندسة المعمارية
 <div class="section" id="arch">
@@ -357,6 +358,78 @@ Sudo systemctl Status Sing-Box</div>
 <strong>⚠️إخلاء المسؤولية القانونية (تم إضافة التأكيد):</strong>هذا البرنامج التعليمي مخصص للتعلم الفني وأغراض البحث الشخصية فقط. يجب على أي منشئ أن يلتزم بقوانين وأنظمة المنطقة التي يتواجد فيها ولا يجوز له استخدام هذا الحل لأغراض غير قانونية. يتحمل الباني كافة المسؤوليات القانونية.</div>
 </div>
 روابط ذات صلة
+<!-- 9 Pi-hole -->
+<div class="section" id="pihole">
+  <h2 class="section-title"><span class="num">9</span>نظام DNS الخاص Pi-hole (يمنع الإعلانات على جميع الأجهزة)</h2>
+  <p class="section-desc">استلم جهاز VM السابق وقم بتشغيل Pi-hole + DNS-over-TLS (DoT) على نفس الجهاز. يمكن الوصول إلى الهواتف المحمولة وأجهزة الكمبيوتر والأجهزة اللوحية من خلال DNS الخاص بك - يتم حظر الإعلانات مباشرة في طبقة DNS، دون تثبيت أداة حظر على كل جهاز أو فتح أي تطبيق VPN لحظر الإعلانات.</p>
+  <div class="step-list" style="counter-reset:step 0">
+    <div class="step-item">
+      <h3>VM من Pi-hole (Docker)</h3>
+      <p>ستتم طباعة كلمة مرور المسؤول الافتراضية في سجل الحاوية (<code>كلمة مرور الويب</code>)، خلفية صفحة الويب:<code>http://<VM_IP>:8080/admin</code>. يرتبط DNS فقط بالجهاز المحلي 5353، ويتركه للخطوة التالية لإعادة توجيه الواجهة الأمامية لـ DoT.</p>
+      <div class="cmd">تشغيل عامل الإرساء -d - اسم pihole - إعادة التشغيل ما لم يتم إيقافه \
+-e TZ=آسيا/هونج_كونج \
+-ص 127.0.0.1:5353:53/برنامج التعاون الفني -ص 127.0.0.1:5353:53/udp \
+-p 8080:80/tcppihole/pihole:latest
+سجلات عامل الإرساء pihole 2>&1 | grep -i كلمة المرور</div>
+    </div>
+    <div class="step-item">
+      <h3>تأكد من تحديث قائمة الحظر (0 قواعد للمعدات المتطورة الجديدة)</h3>
+      <p>الاختبار الشخصي: ثقب Pi جديد<strong>لن يتم حظر أي إعلان</strong>لأن الجاذبية فارغة. لتشغيله يدويًا، قم أولاً بتحميل القائمة الافتراضية الرسمية؛ ثم يمكنك إضافة قائمتك المفضلة (مثل oisd / hagezi) في Web UI → Adlists.</p>
+      <div class="cmd">عامل الميناء exec pihole pihole -g</div>
+      <div class="tip red"><strong>⚠️ لا تفوت هذه الخطوة:</strong><code>بيهول -ز</code>إذا لم تقم بتشغيله، فسوف تعتقد أن الجهاز "مكسور" بعد التثبيت - في الواقع، لم يتم تحميل قائمة السلسلة. ويمكن بعد ذلك جدولة تحديثات قائمة الحظر عبر واجهة مستخدم الويب أو cron.</div>
+    </div>
+    <div class="step-item">
+      <h3>شهادة SSL حقيقية (تُستخدم للتحقق من DoT)</h3>
+      <p>استخدم acme.sh + DNS-01 (رمز Cloudflare)، ولا تفتح المنفذ 80، وسيتم تجديد الشهادة تلقائيًا.</p>
+      <div class="cmd">تصدير CF_Token = "<your CF_API_Token>" CF_Zone_ID = "<your Zone_ID>"
+~/.acme.sh/acme.sh --issue --dns dns_cf -d dns.yourdomain.com \
+--server Letsencrypt --keylength ec-256
+~/.acme.sh/acme.sh --install-cert -d dns.yourdomain.com --ecc \
+--key-file /etc/dnsproxy/key.pem --fullchain-file /etc/dnsproxy/fullchain.pem \
+--reloadcmd "sudo systemctl إعادة تشغيل dnsproxy"</div>
+    </div>
+    <div class="step-item">
+      <h3>dnsproxy منذ DoT (853)</h3>
+      <p>استخدم AdGuard<code>com.dnsproxy</code>(ثنائي فردي)، استمع إلى 853، يشير المنبع إلى Pi-hole. وحدة النظام:</p>
+      <div class="cmd">[الوحدة]
+الوصف=DoT -> Pi-hole
+بعد=docker.service
+[الخدمة]
+ExecStart=/usr/local/bin/dnsproxy --listen=0.0.0.0 --port=0 --tls-port=853 \
+--tls-crt=/etc/dnsproxy/fullchain.pem --tls-key=/etc/dnsproxy/key.pem \
+--upstream=127.0.0.1:5353 --cache --cache-size=65536
+إعادة التشغيل = دائمًا
+[تثبيت]
+WantedBy=multi-user.target</div>
+      <p><code>--المنفذ=0</code>مهم جدًا: بخلاف ذلك، سيتم فتح dnsproxy باستخدام DNS 53 العادي وسيتنافس مع أشياء أخرى على الجهاز الافتراضي على المنافذ.</p>
+    </div>
+    <div class="step-item">
+      <h3>قائمة أمان OCI مفتوحة 853</h3>
+      <p>تحتوي Oracle على طبقتين من جدار الحماية (كما هو موضح في الفقرة 7): وحدة تحكم OCI ← الشبكات ← قوائم الأمان ← إضافة قاعدة دخول:<code>تي سي بي 853</code>.</p>
+    </div>
+    <div class="step-item">
+      <h3>سجل DNS (سجل Huiyun A)</h3>
+      <p>لوحة تحكم CF → DNS → أضف واحدًا:<code>dns.yourdomainname.com</code>→ سجل →<code><VM_IP></code>,<strong>يجب أن تكون سحابة رمادية</strong>(الوكيل متوقف) - تقوم DoT مباشرة بتوصيل TCPs إلى الجهاز الافتراضي ولا تعمل مع وكيل CF.</p>
+    </div>
+    <div class="step-item">
+      <h3>إعدادات الهاتف المحمول/الكمبيوتر</h3>
+      <ul>
+        <li><strong>أندرويد (أصلي):</strong>الإعدادات → DNS الخاص → املأ اسم المضيف<code>dns.yourdomainname.com</code>(نظام DoT، لا تقم بتثبيت التطبيق)</li>
+        <li><strong>آيفون/آيباد:</strong>باستخدام ملف تعريف تكوين DNS (.mobileconfig، DoT)، افتح Safari ← الإعدادات ← عام ← VPN وإدارة الأجهزة ← التثبيت + الثقة. يمكنك أن تطلب من مساعد الذكاء الاصطناعي إنشاء ملف تعريف</li>
+        <li><strong>ويندوز 11:</strong>الإعدادات ← الشبكة والإنترنت ← DNS ← يدوي ← تعبئة DoT<code>dns.yourdomainname.com</code></li>
+      </ul>
+    </div>
+  </div>
+  <div class="tip green" style="margin-top:12px"><strong>يؤكد:</strong><code>حفر +tls @dns.yourdomain.com google.com</code>بمجرد الوصول إلى IP، يتم توصيل النظام؛ ثم<code>حفر +tls @dns.yourdomain.com doubleclick.net</code>يجب أن يخرج<code>0.0.0.0</code>(محظور).</div>
+  <div class="tip red" style="margin-top:8px"><strong>⚠️ ملاحظات:</strong>
+    <ul style="margin:4px 0 0 18px">
+      <li>ستقوم بعض الشبكات (شبكة Wi-Fi الخاصة بالشركة/مزودو خدمات إنترنت معينون) بحظر المنفذ 853 ← سيؤدي هذا الموقف بهدوء إلى عدم تشفير DNS. إذا لزم الأمر، أضف واجهة أمامية DoH (443) كنسخة احتياطية، لكن DNS الخاص بنظام Android يستخدم DoT فقط.</li>
+      <li>لا تنشر عنوان DNS الخاص بك في مكان عام - يمكن لأي شخص يجده استعارة محلل البيانات الخاص بك (مفتوح لإساءة استخدام DNS + استهلاك حركة مرور الأجهزة الافتراضية الخاصة بك).</li>
+      <li>عادةً لا تغطي قائمة الحظر جميع النطاقات الرئيسية (على سبيل المثال<code>googleadservices.com</code>نفسها غير موجودة في القائمة) - عادي، حركة الإعلانات الفعلية هي جميع النطاقات الفرعية (<code>ad.xxx.com</code>)، تلك هي النقاط الرئيسية أولاً.</li>
+    </ul>
+  </div>
+</div>
+
 <div class="link-block" style="margin-top:16px">
 <h3>أدلة ذات صلة</h3>
 <div class="link-row"><span class="label">نشر أوراكل</span><a href="https://forumdata-collab.github.io/hermes-oracle-guide/">كيفية نشر وكيل Hermes على Oracle VM مجانًا</a> <span class="badge ok">أساسيات VM</span></div>
