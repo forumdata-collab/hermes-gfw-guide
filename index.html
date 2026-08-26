@@ -278,6 +278,34 @@ EOF
 sudo systemctl daemon-reload && sudo systemctl enable --now cloudflared-vmws</div>
         <p>Tunnel 建好後，<code>ws.你的域名.com/ws</code> 會經 CF 轉發到 VM nginx → sing-box VLESS-WS inbound。</p>
       </div>
+      </div>
+      <div class="step-item">
+        <h3>⚠️ nginx /ws 路由：必須用專屬 server block（真實事故教訓 2026-08-26）</h3>
+        <p>唔可以求其喺任何 server block 加個 <code>location /ws</code> 就算。<code>ws.你的域名.com</code> 必須有<b>精確 server_name</b> 嘅專屬 block——否則日後加新 conf 改變 default_server 時，WS 握手會靜靜跌入 catch-all 網頁 app 被 404 食咗，節點直接死但伺服器一切「正常」。</p>
+        <div class="cmd">sudo tee /etc/nginx/conf.d/ws-vless.conf &gt; /dev/null &lt;&lt;'EOF'
+server {
+    listen 80;
+    server_name ws.你的域名.com;
+
+    location /ws {
+        proxy_pass http://127.0.0.1:10001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+    location / { return 404; }
+}
+EOF
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx</div>
+        <p><b>驗證</b>（預期 <code>101 Switching Protocols</code>，404 即係路由錯）：</p>
+        <div class="cmd">curl -s --http1.1 -i -H "Upgrade: websocket" -H "Connection: Upgrade" \
+  -H "Sec-WebSocket-Key: dGVzdA==" -H "Sec-WebSocket-Version: 13" \
+  https://ws.你的域名.com/ws | head -1</div>
+      </div>
       <div class="step-item">
         <h3>（備用）下載 edgetunnel Worker 代碼</h3>
         <div class="cmd">curl -sL "https://raw.githubusercontent.com/cmliu/edgetunnel/main/_worker.js" -o _worker.js</div>
